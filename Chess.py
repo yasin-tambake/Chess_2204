@@ -91,9 +91,19 @@ class ChessEngine:
         legal_moves = []
         for move in moves:
             self.make_move(move) # Make the move
-            # Check if the King of the player whose turn it WAS is now in check
+            
+            # --- START FIX ---
+            # self.make_move() flips the turn. We need to check the king of the
+            # player who *just moved*, so we must flip the turn back temporarily.
+            self.white_to_move = not self.white_to_move
+            
             if not self.is_in_check():
                 legal_moves.append(move)
+                
+            # Flip the turn *forward again* so undo_move() works correctly
+            self.white_to_move = not self.white_to_move
+            # --- END FIX ---
+            
             self.undo_move() # Undo the move
 
         # 3. Check for Checkmate or Stalemate
@@ -406,20 +416,32 @@ def print_board(board):
     WHITE_SQUARE = "\033[47m\033[30m" # White background, black text
     BLACK_SQUARE = "\033[40m\033[37m" # Black background, white text
 
-    print("    a b c d e f g h")
-    print("  -----------------")
+    # --- FIX START ---
+    # 3-space prefix to match the row prefix (e.g., "8 |")
+    # 2 spaces between letters to match the 3-char width of a square
+    print("   a  b  c  d  e  f  g  h") 
+    # 3-space prefix + 24 hyphens (8 squares * 3 chars)
+    print("   ------------------------") 
+    # --- FIX END ---
+    
     for r in range(8):
-        row_str = f"{8 - r} |"
+        row_str = f"{8 - r} |" # 3-char prefix
         for c in range(8):
             color = WHITE_SQUARE if (r + c) % 2 == 0 else BLACK_SQUARE
             piece = board[r][c]
             # Replace empty space with a subtle dot for better visibility
             display_piece = piece if piece != ' ' else '.'
             
+            # Each square is 3 visible chars wide: " . " or " P "
             row_str += f"{color} {display_piece} {RESET}"
         print(row_str + f"| {8 - r}")
-    print("  -----------------")
-    print("    a b c d e f g h")
+        
+    # --- FIX START ---
+    # Match the top border
+    print("   ------------------------") 
+    # Match the top file header
+    print("   a  b  c  d  e  f  g  h")
+    # --- FIX END ---
 
 def handle_user_input(valid_moves, board):
     """
@@ -517,3 +539,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
